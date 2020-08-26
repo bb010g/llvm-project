@@ -918,6 +918,9 @@ void RuntimeDyldImpl::addRelocationForSymbol(const RelocationEntry &RE,
   // ExternalSymbolRelocations.
   RTDyldSymbolTable::const_iterator Loc = GlobalSymbolTable.find(SymbolName);
   if (Loc == GlobalSymbolTable.end()) {
+    if (SymbolName.size() > 6 && SymbolName.startswith("__imp_")) {
+      SymbolName = SymbolName.substr(6);
+    }
     ExternalSymbolRelocations[SymbolName].push_back(RE);
   } else {
     // Copy the RE since we want to modify its addend.

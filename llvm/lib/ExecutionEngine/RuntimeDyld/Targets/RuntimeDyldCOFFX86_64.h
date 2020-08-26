@@ -180,7 +180,7 @@ public:
 
     // adjust relocation info so resolution writes to the stub function
     Addend = 0;
-    Offset = StubOffset + 6;
+    Offset = StubOffset;// + 6;
     RelType = COFF::IMAGE_REL_AMD64_ADDR64;
 
     return std::make_tuple(Offset, RelType, Addend);
