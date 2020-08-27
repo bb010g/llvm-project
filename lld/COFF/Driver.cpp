@@ -121,6 +121,7 @@ bool iterateSymbols(const char *path, size_t size,
     mbref = MemoryBufferRef(StringRef(path, size), "");
   }
 
+  bool success = true;
   config = make<Configuration>();
   symtab = make<SymbolTable>();
   driver = make<LinkerDriver>();
@@ -138,13 +139,20 @@ bool iterateSymbols(const char *path, size_t size,
   case file_magic::coff_import_library:
     symtab->addFile(make<ObjFile>(mbref));
     break;
+  case file_magic::pecoff_executable:
+    success = false; // This will happen for JIT situations, but an error
+                     // permanently screws up LLD state, so just return false
+    break;
   default:
     error(mbref.getBufferIdentifier() + ": unknown file type");
-    return false;
+    success = false;
+    break;
   }
 
-  symtab->forEachSymbol(
-      [iter, state](Symbol *s) { (*iter)(state, s->getName().str().c_str()); });
+  if (success)
+    symtab->forEachSymbol([iter, state](Symbol *s) {
+      (*iter)(state, s->getName().str().c_str());
+    });
 
   ObjFile::instances.clear();
   ImportFile::instances.clear();
@@ -152,7 +160,7 @@ bool iterateSymbols(const char *path, size_t size,
   memset(MergeChunk::instances, 0, sizeof(MergeChunk::instances));
   freeArena();
 
-  return true;
+  return success;
 } // namespace coff
 
 // Parse options of the form "old;new".
